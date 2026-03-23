@@ -7,7 +7,7 @@ import pathlib
 
 url = str("http://localhost:8085/data.json")
 cRPM = 20
-path = str(r"C:\Users\Willy\Documents\Projects\ArduFAN\LibreHardwareMonitor.exe")
+path = str(r"")
 
 
 class FanController:
