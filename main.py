@@ -9,6 +9,7 @@ url = str("http://localhost:8085/data.json")
 cRPM = 20
 path = str(r"")
 
+# Criar script para instalar o libre hardware monitor.
 
 class FanController:
     def __init__(self, alpha=0.1):
