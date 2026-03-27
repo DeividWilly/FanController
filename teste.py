@@ -18,4 +18,4 @@ def configXML(configPath, port):
     tree.write(configPath, encoding="utf-8", xml_declaration=True)
     print(f"File saved in {configPath} Please restart the LibreHardwareMonitor process manually.")
     
-configXML("LibreHardwareMonitor/LibreHardwareMonitor.config", "8086")
+configXML("LibreHardwareMonitor/LibreHardwareMonitor.config", port)
