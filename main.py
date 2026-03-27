@@ -5,6 +5,8 @@ import wmi
 import os
 import pathlib
 
+# Adicionar verificador da pasta LibreHardwareMonitor
+
 port = "8085"
 url = str(f"http://localhost:{port}/data.json")
 cRPM = 20
@@ -83,7 +85,7 @@ def getRAM():
 if verifyApp() == False:
     os.startfile(path)
     time.sleep(15)
-    
+
 while True:
     try:
         temp = FanController.getTemp(url)
