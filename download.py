@@ -4,7 +4,6 @@ import sys
 import os
 import shutil
 import time
-import psutil
 import xml.etree.ElementTree as ET
 from urllib.request import urlretrieve
 
@@ -44,48 +43,42 @@ def extractFile(file):
         sys.exit(1)
         
 def configXML(configPath, port):
-    
     tree = ET.parse(configPath)
     root = tree.getroot()
 
-    # Flags para saber se as chaves existem
+    app_settings = root.find(".//appSettings")
+    if app_settings is None:
+        print("appSettings not found!")
+        return
+
     run_web_exists = False
     listener_port_exists = False
 
-    for elem in root.findall(".//add"):
+    for elem in app_settings.findall("add"):
         key = elem.get("key")
+        
         if key == "runWebServerMenuItem":
             elem.set("value", "true")
             run_web_exists = True
             print("WebServer activated.")
+            
         elif key == "listenerPort":
-            elem.set("value", port)
+            elem.set("value", str(port))
             listener_port_exists = True
             print(f"WebServer port set to {port}")
 
-    # Se não existir, cria os elementos
     if not run_web_exists:
-        new_elem = ET.SubElement(root, "add", key="runWebServerMenuItem", value="true")
+        ET.SubElement(app_settings, "add", key="runWebServerMenuItem", value="true")
         print("WebServer rule created and activated.")
 
     if not listener_port_exists:
-        new_elem = ET.SubElement(root, "add", key="listenerPort", value=port)
+        ET.SubElement(app_settings, "add", key="listenerPort", value=str(port))
         print(f"WebServer port rule created and set to {port}")
             
     tree.write(configPath, encoding="utf-8", xml_declaration=True)
     print(f"File saved in {configPath}")
     print("Manually restart the LibreHardwareMonitor process if it is already running to ensure the configuration is correct.")
-
-def openApp(folderName):
-    os.startfile(folderName + r"\LibreHardwareMonitor.exe")
-    print("LibreHardwareMonitor opened, in 20 seconds will closed.")
-    time.sleep(20)
-    for proc in psutil.process_iter(['pid', 'name']):
-        if proc.info['name'] == "LibreHardwareMonitor.exe":
-            proc.terminate()  # envia sinal para terminar
-            #proc.wait(timeout=5)  # espera até 5 segundos para fechar
-    
-
+            
 check = checkFile(fileZipName, folderName)
 
 if check[0] == True:
