@@ -1,5 +1,6 @@
 import pathlib
 import zipfile
+import sys
 import xml.etree.ElementTree as ET
 from urllib.request import urlretrieve
 
@@ -22,9 +23,15 @@ def downloadFile(url, fileName):
     
 def extractFile(file):
     print("Descompactando...")
-    with zipfile.ZipFile(file, 'r') as zip_ref:
-        zip_ref.extractall("LibreHardwareMonitor")
-
+    try:
+        with zipfile.ZipFile(file, 'r') as zip_ref:
+            zip_ref.extractall("LibreHardwareMonitor")
+    except PermissionError:
+        f = pathlib.Path(file)
+        f.unlink()
+        print("File running. Please close the LibreHardwareMonitor process and try again.")
+        sys.exit(1)
+        
 def configXML(configPath, port):
     
     tree = ET.parse(configPath)
@@ -35,7 +42,7 @@ def configXML(configPath, port):
             elem.set("value", "true")
             print("WebServer activated.")
             
-        elif elem.get("key") == "listenerPort":
+        elif elem.get("key") == "listenerPort": # <add key="listenerPort" value="8085" />
             elem.set("value", port)
             print(f"WebServer port set to {port}")
             
@@ -47,6 +54,7 @@ check = checkFile(filename)
 
 if check == True:
     print("File has exists.")
+    
 else:
     print("Downloading...")
     downloadFile(package_link, filename)
