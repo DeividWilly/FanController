@@ -1,5 +1,6 @@
 import pathlib
 import zipfile
+import xml.etree.ElementTree as ET
 from urllib.request import urlretrieve
 
 version_app = "v0.9.6"
@@ -28,6 +29,7 @@ def extractFile(file):
         zip_ref.extractall("LibreHardwareMonitor")
 
 check = checkFile(filename)
+
 if check == True:
     print("Arquivo já existe")
 else:
