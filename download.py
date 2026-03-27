@@ -32,7 +32,7 @@ def downloadFile(url, fileName):
     print("Done!")
     
 def extractFile(file):
-    print("Descompactando...")
+    print("Unpacking...")
     try:
         with zipfile.ZipFile(file, 'r') as zip_ref:
             zip_ref.extractall("LibreHardwareMonitor")
