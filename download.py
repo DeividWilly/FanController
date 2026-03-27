@@ -4,7 +4,11 @@ from urllib.request import urlretrieve
 
 version_app = "v0.9.6"
 package_link = f"https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases/download/{version_app}/LibreHardwareMonitor.zip"
-filename = "Teste.zip"
+filename = "LibreHardwareMonitor.zip"
+
+# Download do arquivo - ok
+# Extração do arquivo - ok
+# Modificação do xml para ativar o web server - em progresso <add key="runWebServerMenuItem" value="true" />
 
 def checkFile(path):
     f = pathlib.Path(path)
@@ -21,7 +25,7 @@ def downloadFile(url, fileName):
 def extractFile(file):
     print("Descompactando...")
     with zipfile.ZipFile(file, 'r') as zip_ref:
-        zip_ref.extractall("Teste")
+        zip_ref.extractall("LibreHardwareMonitor")
 
 check = checkFile(filename)
 if check == True:
