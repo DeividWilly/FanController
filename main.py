@@ -4,96 +4,90 @@ import time
 import wmi
 import os
 import pathlib
-from download import port
+
 
 folder = ['Aga.Controls.dll', 'Aga.Controls.pdb', 'BlackSharp.Core.dll', 'de', 'DiskInfoToolkit.dll', 'es', 'fr', 'HidSharp.dll', 'it', 'ja', 'LibreHardwareMonitor.config', 'LibreHardwareMonitor.exe', 'LibreHardwareMonitor.exe.config', 'LibreHardwareMonitorLib.dll', 'LibreHardwareMonitorLib.pdb', 'LibreHardwareMonitorLib.xml', 'Microsoft.Bcl.AsyncInterfaces.dll', 'Microsoft.Bcl.HashCode.dll', 'Microsoft.Win32.TaskScheduler.dll', 'OxyPlot.dll', 'OxyPlot.WindowsForms.dll', 'pl', 'RAMSPDToolkit-NDD.dll', 'README.md', 'ru', 'sv', 'System.Buffers.dll', 'System.CodeDom.dll', 'System.Collections.Immutable.dll', 'System.Formats.Nrbf.dll', 'System.IO.Pipelines.dll', 'System.Memory.dll', 'System.Numerics.Vectors.dll', 'System.Reflection.Metadata.dll', 'System.Resources.Extensions.dll', 'System.Runtime.CompilerServices.Unsafe.dll', 'System.Security.AccessControl.dll', 'System.Security.Principal.Windows.dll', 'System.Text.Encodings.Web.dll', 'System.Text.Json.dll', 'System.Threading.AccessControl.dll', 'System.Threading.Tasks.Extensions.dll', 'tr', 'zh-CN', 'zh-Hant']
 
 port = "8085"
 url = str(f"http://localhost:{port}/data.json")
-cRPM = 20
 path = str(r"LibreHardwareMonitor\LibreHardwareMonitor.exe")
 
-class FanController:
-    def __init__(self, alpha=0.1):
-        self.rpm = 50
-        self.alpha = alpha
-
-    def getTemp(api_url):
+class CPU():
+    def __init__(self):
+        self.temp = 0
+        self.lastTemp = 0
+        self.load = 0.1
+    
+    def getTemp(self, api_url):
         response = requests.get(api_url)
-    
         if response.status_code == 200:
             data = response.json()
-            actualTemp = int(data["Children"][0]["Children"][1]["Children"][3]["Children"][10]["Value"].replace(".0 °C", ""))
-        
-            return actualTemp
-
+            self.temp = int(data["Children"][0]["Children"][1]["Children"][3]["Children"][10]["Value"].replace(".0 °C", ""))
+            return self.temp
+            
         else:
-            print(f"ERROR: {response.status_code}")
-
-    def getCpuLoad(api_url):
-        response = request.get(api_url)
-        
+            print("ERROR")
+            return None
+            
+    def getLoad(self, api_url):
+        response = requests.get(api_url)
         if response.status_code == 200:
             data = response.json()
-            cpuLoad = float(data["Children"][0]["Children"][1]["Children"][4]["Children"][0]["Value"].replace(" %", ""))
-            
-            return cpuLoad
+            self.load = float(data["Children"][0]["Children"][1]["Children"][4]["Children"][0]["Value"].replace(" %", ""))
+            return self.load
         else:
-            print(f"ERROR: {response.status_code}")
+            print("ERROR")
+            return None
             
-    def setRPM(actualTemp):
-        if actualTemp <= 50:
-            targetRPM = 20
+class Controller():
+    def __init__(self):
+        self.rpmCurve = [
+        (50, 20),
+        (60, 40),
+        (70, 60),
+        (80, 80),
+        (120, 100)]
         
-        elif actualTemp <= 60:
-            targetRPM = 30
+        self.tempLimit = 3
+        self.alpha_up = 0.7
+        self.alpha_down = 0.2
+        self.lastRPM = None
         
-        elif actualTemp <= 70:
-            targetRPM = 50
-            
-        elif actualTemp <= 80:
-            targetRPM = 70
-                
-        elif actualTemp <= 120:
-            targetRPM = 100
-        
-        return targetRPM
-        
-    def smoothRPM(target):
-        sRPM = target
-        sRPM = int((0.5 * target) + (1 - 0.5) * sRPM)
-        return sRPM
-        
-def verifyApp():
-    f = wmi.WMI()
-    
-    flag = 0
-    
-    for process in f.Win32_Process():
-        if "LibreHardwareMonitor.exe" == process.Name:
-            flag = 1
-            return True
-    if flag == 0:
-        return False
-        
-def getRAM():
-    f = wmi.WMI()
-    
-    for memory in f.Win32_PerfFormattedData_PerfOS_Memory():
-        RAM = memory.PercentCommittedBytesInUse
-        return RAM
 
-if verifyApp() == False:
-    os.startfile(path)
-    time.sleep(15)
+    def setRPM(self, cpuTemperature):
+        for temp, rpm in self.rpmCurve:
+            if cpuTemperature <= temp:
+                return rpm
+        return 100
+
+    def smoothRPM(self, targetRPM):
+        if self.lastRPM is None:
+            self.lastRPM = float(targetRPM)
+            return targetRPM
+
+        if abs(targetRPM - self.lastRPM) < 2:
+            return int(self.lastRPM)
+
+        if targetRPM > self.lastRPM:
+            alpha = self.alpha_up
+        else:
+            alpha = self.alpha_down
+
+        smoothed = (
+            alpha * targetRPM + (1 - alpha) * self.lastRPM
+        )
+
+        self.lastRPM = smoothed
+        return int(smoothed)
+        
+        
+sensor = CPU()
+control = Controller()
 
 while True:
-    try:
-        temp = FanController.getTemp(url)
-        tRPM = FanController.setRPM(temp)
-        cRPM = int((0.5 * tRPM) + ((1 - 0.5) * cRPM))
-        #cRPM = FanController.smoothRPM(tRPM)
-        print(f"\rTemp: {temp} | Target RPM: {cRPM}%", end='')
-        time.sleep(1)
-    except KeyboardInterrupt:
-        break
+    temp = sensor.getTemp(url)
+    rpm = control.setRPM(temp)
+    srpm = control.smoothRPM(rpm)
+
+    print(f"\rcpu temp: {temp} | cpu load: {None} | rpm target: {rpm}% | rpm smoothed: {srpm}%", end="")
+    time.sleep(1)
