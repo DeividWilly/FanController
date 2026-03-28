@@ -118,4 +118,4 @@ else:
             break
         else:
             print("Invalid input, use Y or N")
-    
+print("Press ENTER to exit. ")
