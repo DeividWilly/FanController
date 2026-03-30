@@ -5,12 +5,22 @@ import wmi
 import os
 import pathlib
 
-
-folder = ['Aga.Controls.dll', 'Aga.Controls.pdb', 'BlackSharp.Core.dll', 'de', 'DiskInfoToolkit.dll', 'es', 'fr', 'HidSharp.dll', 'it', 'ja', 'LibreHardwareMonitor.config', 'LibreHardwareMonitor.exe', 'LibreHardwareMonitor.exe.config', 'LibreHardwareMonitorLib.dll', 'LibreHardwareMonitorLib.pdb', 'LibreHardwareMonitorLib.xml', 'Microsoft.Bcl.AsyncInterfaces.dll', 'Microsoft.Bcl.HashCode.dll', 'Microsoft.Win32.TaskScheduler.dll', 'OxyPlot.dll', 'OxyPlot.WindowsForms.dll', 'pl', 'RAMSPDToolkit-NDD.dll', 'README.md', 'ru', 'sv', 'System.Buffers.dll', 'System.CodeDom.dll', 'System.Collections.Immutable.dll', 'System.Formats.Nrbf.dll', 'System.IO.Pipelines.dll', 'System.Memory.dll', 'System.Numerics.Vectors.dll', 'System.Reflection.Metadata.dll', 'System.Resources.Extensions.dll', 'System.Runtime.CompilerServices.Unsafe.dll', 'System.Security.AccessControl.dll', 'System.Security.Principal.Windows.dll', 'System.Text.Encodings.Web.dll', 'System.Text.Json.dll', 'System.Threading.AccessControl.dll', 'System.Threading.Tasks.Extensions.dll', 'tr', 'zh-CN', 'zh-Hant']
-
 port = "8085"
 url = str(f"http://localhost:{port}/data.json")
 path = str(r"LibreHardwareMonitor\LibreHardwareMonitor.exe")
+
+
+class PC():
+    def __init__(self):
+        self.ramUsed = 0
+        self.ramFree = 0
+        self.gpuLoad = 0
+        self.vramUsed = 0
+        self.vramFree = 0
+        self.gpuLoad = 0
+        self.gpuTemp = 0
+        self.cpuLoad = 0
+        self.cpuTemp = 0
 
 class CPU():
     def __init__(self):
@@ -80,10 +90,22 @@ class Controller():
         self.lastRPM = smoothed
         return int(smoothed)
         
-        
+def verifyApp():
+    pc = wmi.WMI()
+    
+    for process in pc.Win32_Process():
+        if "LibreHardwareMonitor.exe" == process.Name:
+            return True
+    return False
+            
 sensor = CPU()
 control = Controller()
 
+if verifyApp() == False:
+    print("LibreHardwareMonitor not running, starting...")
+    os.startfile(path)
+    time.sleep(20)
+    
 while True:
     temp = sensor.getTemp(url)
     rpm = control.setRPM(temp)
