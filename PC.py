@@ -1,3 +1,7 @@
+import wmi 
+import requests
+import json
+
 class PC():
     def __init__(self):
         self.usedRAM = 0

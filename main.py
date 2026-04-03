@@ -1,9 +1,8 @@
-import requests
-import json
+import sys
 import time
 import wmi
-import os
-import pathlib
+from Controller import Controller
+from PC import PC
 
 port = "8085"
 url = str(f"http://localhost:{port}/data.json")
@@ -16,25 +15,30 @@ def verifyApp():
         if "LibreHardwareMonitor.exe" == process.Name:
             return True
     return False
+           
+if __name__ == "__main__": 
+    if verifyApp() == True:
+        print("\n" * 3)
+
+        pc = PC()
+        s = Controller()
+
+        while True:
+            temp = pc.getTemp(url)
+            load = pc.getLoad(url)
+            rpm = s.setRPM(temp)
+            srpm = s.smoothRPM(rpm)
+            uram = pc.getRAM()[2]
+            tram = pc.getRAM()[0]
             
-# sensor = CPU()
-# control = Controller()
-
-# if verifyApp() == False:
-    # print("LibreHardwareMonitor not running, starting...")
-    # os.startfile(path)
-    # time.sleep(20)
-    
-# while True:
-    # temp = sensor.getTemp(url)
-    # rpm = control.setRPM(temp)
-    # srpm = control.smoothRPM(rpm)
-
-    # print(f"\rcpu temp: {temp} | cpu load: {None} | rpm target: {rpm}% | rpm smoothed: {srpm}%", end="")
-    # time.sleep(1)
-
-
-while True:
-    pc = PC()
-    print(f"\r{pc.getRAM()[2]:.1f}/{pc.getRAM()[0]:.1f} GB", end="")
-    time.sleep(0.7)
+            sys.stdout.write("\033[3F")
+            
+            sys.stdout.write(f"Temp: {temp}°C\n")
+            sys.stdout.write(f"CPU Load: {load}%\n")
+            sys.stdout.write(f"RPM: {rpm}% -> {srpm}%\n")
+            sys.stdout.write(f"RAM: {uram:.1f}/{tram:.1f}")
+            sys.stdout.flush()
+            
+            time.sleep(1)
+    else:
+        print("erro")
