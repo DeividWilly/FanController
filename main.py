@@ -1,93 +1,44 @@
-import requests
-import json
+import sys
 import time
 import wmi
-import os
-import pathlib
-
-
-folder = ['Aga.Controls.dll', 'Aga.Controls.pdb', 'BlackSharp.Core.dll', 'de', 'DiskInfoToolkit.dll', 'es', 'fr', 'HidSharp.dll', 'it', 'ja', 'LibreHardwareMonitor.config', 'LibreHardwareMonitor.exe', 'LibreHardwareMonitor.exe.config', 'LibreHardwareMonitorLib.dll', 'LibreHardwareMonitorLib.pdb', 'LibreHardwareMonitorLib.xml', 'Microsoft.Bcl.AsyncInterfaces.dll', 'Microsoft.Bcl.HashCode.dll', 'Microsoft.Win32.TaskScheduler.dll', 'OxyPlot.dll', 'OxyPlot.WindowsForms.dll', 'pl', 'RAMSPDToolkit-NDD.dll', 'README.md', 'ru', 'sv', 'System.Buffers.dll', 'System.CodeDom.dll', 'System.Collections.Immutable.dll', 'System.Formats.Nrbf.dll', 'System.IO.Pipelines.dll', 'System.Memory.dll', 'System.Numerics.Vectors.dll', 'System.Reflection.Metadata.dll', 'System.Resources.Extensions.dll', 'System.Runtime.CompilerServices.Unsafe.dll', 'System.Security.AccessControl.dll', 'System.Security.Principal.Windows.dll', 'System.Text.Encodings.Web.dll', 'System.Text.Json.dll', 'System.Threading.AccessControl.dll', 'System.Threading.Tasks.Extensions.dll', 'tr', 'zh-CN', 'zh-Hant']
+from Controller import Controller
+from PC import PC
 
 port = "8085"
 url = str(f"http://localhost:{port}/data.json")
 path = str(r"LibreHardwareMonitor\LibreHardwareMonitor.exe")
 
-class CPU():
-    def __init__(self):
-        self.temp = 0
-        self.lastTemp = 0
-        self.load = 0.1
+def verifyApp():
+    pc = wmi.WMI()
     
-    def getTemp(self, api_url):
-        response = requests.get(api_url)
-        if response.status_code == 200:
-            data = response.json()
-            self.temp = int(data["Children"][0]["Children"][1]["Children"][3]["Children"][10]["Value"].replace(".0 °C", ""))
-            return self.temp
+    for process in pc.Win32_Process():
+        if "LibreHardwareMonitor.exe" == process.Name:
+            return True
+    return False
+           
+if __name__ == "__main__": 
+    if verifyApp() == True:
+        print("\n" * 3)
+
+        pc = PC()
+        s = Controller()
+
+        while True:
+            temp = pc.getTemp(url)
+            load = pc.getLoad(url)
+            rpm = s.setRPM(temp)
+            srpm = s.smoothRPM(rpm)
+            uram = pc.getRAM()[2]
+            tram = pc.getRAM()[0]
             
-        else:
-            print("ERROR")
-            return None
+            sys.stdout.write("\033[3F")
             
-    def getLoad(self, api_url):
-        response = requests.get(api_url)
-        if response.status_code == 200:
-            data = response.json()
-            self.load = float(data["Children"][0]["Children"][1]["Children"][4]["Children"][0]["Value"].replace(" %", ""))
-            return self.load
-        else:
-            print("ERROR")
-            return None
+            sys.stdout.write(f"Temp: {temp}°C\n")
+            sys.stdout.write(f"CPU Load: {load}%\n")
+            sys.stdout.write(f"RPM: {rpm}% -> {srpm}%\n")
+            sys.stdout.write(f"RAM: {uram:.1f}/{tram:.1f}")
+            sys.stdout.flush()
             
-class Controller():
-    def __init__(self):
-        self.rpmCurve = [
-        (50, 20),
-        (60, 40),
-        (70, 60),
-        (80, 80),
-        (120, 100)]
-        
-        self.tempLimit = 3
-        self.alpha_up = 0.7
-        self.alpha_down = 0.2
-        self.lastRPM = None
-        
-
-    def setRPM(self, cpuTemperature):
-        for temp, rpm in self.rpmCurve:
-            if cpuTemperature <= temp:
-                return rpm
-        return 100
-
-    def smoothRPM(self, targetRPM):
-        if self.lastRPM is None:
-            self.lastRPM = float(targetRPM)
-            return targetRPM
-
-        if abs(targetRPM - self.lastRPM) < 2:
-            return int(self.lastRPM)
-
-        if targetRPM > self.lastRPM:
-            alpha = self.alpha_up
-        else:
-            alpha = self.alpha_down
-
-        smoothed = (
-            alpha * targetRPM + (1 - alpha) * self.lastRPM
-        )
-
-        self.lastRPM = smoothed
-        return int(smoothed)
-        
-        
-sensor = CPU()
-control = Controller()
-
-while True:
-    temp = sensor.getTemp(url)
-    rpm = control.setRPM(temp)
-    srpm = control.smoothRPM(rpm)
-
-    print(f"\rcpu temp: {temp} | cpu load: {None} | rpm target: {rpm}% | rpm smoothed: {srpm}%", end="")
-    time.sleep(1)
+            time.sleep(1)
+    else:
+        print("erro")
