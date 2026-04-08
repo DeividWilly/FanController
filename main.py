@@ -1,6 +1,7 @@
 import sys
 import time
 import wmi
+import json
 from Controller import Controller
 from PC import PC
 
@@ -15,7 +16,18 @@ def verifyApp():
         if "LibreHardwareMonitor.exe" == process.Name:
             return True
     return False
-           
+
+def buildJson(cpuTemp, cpuLoad, fanRPM, ramUsage, totalRAM):
+        dict = {
+                "c": cpuTemp,
+                "cl": cpuLoad,
+                "r": fanRPM,
+                "ru": round(ramUsage, 1), 
+                "tr": round(totalRAM, 1)
+                }
+        data = json.dumps(dict)
+        return data
+        
 if __name__ == "__main__": 
     if verifyApp() == True:
         print("\n" * 3)
@@ -31,14 +43,8 @@ if __name__ == "__main__":
             uram = pc.getRAM()[2]
             tram = pc.getRAM()[0]
             
-            sys.stdout.write("\033[3F")
-            
-            sys.stdout.write(f"Temp: {temp}°C\n")
-            sys.stdout.write(f"CPU Load: {load}%\n")
-            sys.stdout.write(f"RPM: {rpm}% -> {srpm}%\n")
-            sys.stdout.write(f"RAM: {uram:.1f}/{tram:.1f}")
-            sys.stdout.flush()
-            
+            a = buildJson(temp, load, srpm, uram, tram)
+            print(a)
             time.sleep(1)
     else:
         print("erro")
