@@ -10,11 +10,11 @@ The script will provide JSON with five data points: Temperature, CPU Load, Total
 
 ```   
     	{
-    	"t": 63,	# Temperature
-    	"l": 8.0,	# CPU Load
-    	"tr": 19.7,	# Total RAM	
-    	"ur": 11.6,	# RAM Usage
-    	"r": 51		# Target RPM
+    	"c": 63,	# Temperature
+    	"cl": 8.0,	# CPU Load
+    	"r": 19.7,	# fanRPM	
+    	"ru": 11.6,	# RAM Usage
+    	"tr": 51	# Total RAM
 
     	}
 ```
