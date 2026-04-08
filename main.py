@@ -1,12 +1,18 @@
 import sys
 import time
 import wmi
+import json
 from Controller import Controller
 from PC import PC
 
 port = "8085"
 url = str(f"http://localhost:{port}/data.json")
 path = str(r"LibreHardwareMonitor\LibreHardwareMonitor.exe")
+
+def build(cpuTemperature, cpuLoad, totalRAM, usedRAM, rpm):
+    return json.dumps(
+        {"t": cpuTemperature, "l": cpuLoad, "tr": totalRAM, "ur": usedRAM, "r": rpm}, separators=(',', ':')
+        )
 
 def verifyApp():
     pc = wmi.WMI()
@@ -28,16 +34,10 @@ if __name__ == "__main__":
             load = pc.getLoad(url)
             rpm = s.setRPM(temp)
             srpm = s.smoothRPM(rpm)
-            uram = pc.getRAM()[2]
-            tram = pc.getRAM()[0]
+            uram = round(pc.getRAM()[2], 1)
+            tram = round(pc.getRAM()[0], 1)
             
-            sys.stdout.write("\033[3F")
-            
-            sys.stdout.write(f"Temp: {temp}°C\n")
-            sys.stdout.write(f"CPU Load: {load}%\n")
-            sys.stdout.write(f"RPM: {rpm}% -> {srpm}%\n")
-            sys.stdout.write(f"RAM: {uram:.1f}/{tram:.1f}")
-            sys.stdout.flush()
+            data = build(temp, load, tram, uram, srpm)
             
             time.sleep(1)
     else:
