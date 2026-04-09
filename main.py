@@ -1,7 +1,7 @@
 import sys
 import time
 import wmi
-import json
+import struct
 from Controller import Controller
 from PC import PC
 
@@ -16,17 +16,6 @@ def verifyApp():
         if "LibreHardwareMonitor.exe" == process.Name:
             return True
     return False
-
-def buildJson(cpuTemp, cpuLoad, fanRPM, ramUsage, totalRAM):
-        dict = {
-                "c": cpuTemp,
-                "cl": cpuLoad,
-                "r": fanRPM,
-                "ru": round(ramUsage, 1), 
-                "tr": round(totalRAM, 1)
-                }
-        data = json.dumps(dict)
-        return data
         
 if __name__ == "__main__": 
     if verifyApp() == True:
@@ -36,15 +25,22 @@ if __name__ == "__main__":
         s = Controller()
 
         while True:
-            temp = pc.getTemp(url)
-            load = pc.getLoad(url)
+            temp = int(pc.getTemp(url))
+            load = int(pc.getLoad(url))
             rpm = s.setRPM(temp)
             srpm = s.smoothRPM(rpm)
             uram = pc.getRAM()[2]
             tram = pc.getRAM()[0]
             
-            a = buildJson(temp, load, srpm, uram, tram)
-            print(a)
+            data = struct.pack("<BBBHH", 
+                                temp, 
+                                load, 
+                                srpm, 
+                                int(uram * 10), 
+                                int(tram * 10)
+                               ) # depois, tram dividido por 10.0
+            print(len(data))
+                               
             time.sleep(1)
     else:
         print("erro")
