@@ -40,6 +40,7 @@ if __name__ == "__main__":
                                 int(tram * 10)
                                ) # depois, tram dividido por 10.0
             print(len(data))
+            print(data)
                                
             time.sleep(1)
     else:
