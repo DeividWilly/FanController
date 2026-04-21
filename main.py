@@ -1,6 +1,7 @@
 import sys
 import time
 import wmi
+import struct
 from Controller import Controller
 from PC import PC
 
@@ -15,7 +16,7 @@ def verifyApp():
         if "LibreHardwareMonitor.exe" == process.Name:
             return True
     return False
-           
+        
 if __name__ == "__main__": 
     if verifyApp() == True:
         print("\n" * 3)
@@ -24,7 +25,24 @@ if __name__ == "__main__":
         s = Controller()
 
         while True:
+
+            temp = int(pc.getTemp(url))
+            load = int(pc.getLoad(url))
+            rpm = s.setRPM(temp)
+            srpm = s.smoothRPM(rpm)
+            uram = pc.getRAM()[2]
+            tram = pc.getRAM()[0]
             
+            data = struct.pack("<BBBHH", 
+                                temp, 
+                                load, 
+                                srpm, 
+                                int(uram * 10), 
+                                int(tram * 10)
+                               ) # depois, tram dividido por 10.0
+            print(len(data))
+            print(data)
+                               
             time.sleep(1)
     else:
         print("erro")
